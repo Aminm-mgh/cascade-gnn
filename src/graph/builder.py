@@ -12,13 +12,6 @@ def load_raw_data(path: str = "data/raw/DataCoSupplyChainDataset.csv") -> pd.Dat
 def build_graph(df: pd.DataFrame) -> HeteroData:
     """
     Construct a bipartite Category <-> Customer graph.
-
-    Returns a PyTorch Geometric HeteroData object with:
-    - data['category'].x       : category node features
-    - data['customer'].x       : customer node features
-    - data['customer', 'orders_from', 'category'].edge_index : edges
-    - data['customer', 'orders_from', 'category'].edge_attr  : edge features
-    - data['customer', 'orders_from', 'category'].y          : late delivery risk label
     """
     # --- Build node ID mappings ---
     categories = df["Category Name"].unique()
@@ -27,8 +20,7 @@ def build_graph(df: pd.DataFrame) -> HeteroData:
     cat_to_idx = {cat: i for i, cat in enumerate(categories)}
     cust_to_idx = {cust: i for i, cust in enumerate(customers)}
 
-    # --- Node features ---
-    # Category nodes: average price, average profit ratio, order count
+    # --- Node features (unchanged) ---
     cat_stats = df.groupby("Category Name").agg(
         avg_price=("Product Price", "mean"),
         avg_profit_ratio=("Order Item Profit Ratio", "mean"),
@@ -36,7 +28,6 @@ def build_graph(df: pd.DataFrame) -> HeteroData:
     ).reindex(categories)
     category_x = torch.tensor(cat_stats.values, dtype=torch.float)
 
-    # Customer nodes: total sales, order count, avg late delivery risk
     cust_stats = df.groupby("Customer Id").agg(
         total_sales=("Sales", "sum"),
         order_count=("Order Item Id", "count"),
@@ -49,9 +40,29 @@ def build_graph(df: pd.DataFrame) -> HeteroData:
     dst = df["Category Name"].map(cat_to_idx).values
     edge_index = torch.tensor(np.array([src, dst]), dtype=torch.long)
 
+    # --- Richer edge features (order-level, no label leakage) ---
+    # Encode Shipping Mode as integer codes
+    shipping_mode_codes = df["Shipping Mode"].astype("category").cat.codes.values
+
+    # Encode Order Region as integer codes
+    order_region_codes = df["Order Region"].astype("category").cat.codes.values
+
+    edge_numeric = df[[
+        "Sales",
+        "Order Item Quantity",
+        "Order Item Discount Rate",
+        "Days for shipment (scheduled)",
+    ]].values
+
     edge_attr = torch.tensor(
-        df[["Sales", "Order Item Quantity"]].values, dtype=torch.float
+        np.column_stack([
+            edge_numeric,
+            shipping_mode_codes,
+            order_region_codes,
+        ]),
+        dtype=torch.float,
     )
+
     edge_label = torch.tensor(df["Late_delivery_risk"].values, dtype=torch.long)
 
     # --- Assemble HeteroData object ---
@@ -63,7 +74,6 @@ def build_graph(df: pd.DataFrame) -> HeteroData:
     data["customer", "orders_from", "category"].y = edge_label
 
     return data
-
 
 def save_graph(data: HeteroData, path: str = "data/processed/graph.pt") -> None:
     torch.save(data, path)
