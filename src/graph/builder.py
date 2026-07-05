@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 from torch_geometric.data import HeteroData
+from torch_geometric.transforms import ToUndirected
 import numpy as np
 
 
@@ -102,6 +103,8 @@ def build_graph(df: pd.DataFrame) -> HeteroData:
     data["customer", "orders_from", "category"].train_mask = train_mask
     data["customer", "orders_from", "category"].val_mask = val_mask
     data["customer", "orders_from", "category"].test_mask = test_mask
+
+    data = ToUndirected()(data)
 
     return data
 
