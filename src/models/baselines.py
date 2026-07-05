@@ -142,6 +142,33 @@ def run_xgboost(X, y):
         print(f"  Feature {idx}: importance {importances[idx]:.4f}")
 
 
+
+def run_centrality_heuristic(data):
+    """
+    Simple heuristic baseline: flag orders as high-risk if the connected
+    customer's betweenness centrality is above the median. No learning
+    involved — just a fixed threshold rule.
+    """
+    cust_degree, cust_betweenness, cat_degree, cat_betweenness = compute_centrality_features(data)
+
+    edge_index = data["customer", "orders_from", "category"].edge_index
+    src = edge_index[0].numpy()
+    y = data["customer", "orders_from", "category"].y.numpy()
+
+    edge_betweenness = cust_betweenness[src]
+
+    threshold = np.median(edge_betweenness)
+    preds = (edge_betweenness > threshold).astype(int)
+
+    print("--- Simple Betweenness-Centrality Heuristic ---")
+    print(f"Threshold (median betweenness): {threshold:.6f}")
+    print(f"Accuracy: {accuracy_score(y, preds):.4f}")
+    print(f"F1 Score: {f1_score(y, preds):.4f}")
+    # No probability scores exist for a hard threshold rule, so no ROC AUC here
+
+
+
+
 if __name__ == "__main__":
     data = load_graph()
 
@@ -153,3 +180,5 @@ if __name__ == "__main__":
     X_centrality, y_centrality = build_edge_features_with_centrality(data)
     print(f"Feature matrix with centrality shape: {X_centrality.shape}")
     run_xgboost(X_centrality, y_centrality)
+    print()
+    run_centrality_heuristic(data)
