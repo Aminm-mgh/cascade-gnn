@@ -140,27 +140,6 @@ if __name__ == "__main__":
 
     data = torch.load("data/processed/graph.pt", weights_only=False)
     data = normalize_graph(data)
-    # --- Normalize features (critical for stable GNN training) ---
-    # Node features: z-score normalize each column
-    for node_type in data.node_types:
-        x = data[node_type].x
-        mean = x.mean(dim=0, keepdim=True)
-        std = x.std(dim=0, keepdim=True) + 1e-6
-        data[node_type].x = (x - mean) / std
-
-    # Edge features: normalize using TRAINING edges only, to avoid leakage
-    train_mask = data["customer", "orders_from", "category"].train_mask
-    edge_attr = data["customer", "orders_from", "category"].edge_attr
-    train_mean = edge_attr[train_mask].mean(dim=0, keepdim=True)
-    train_std = edge_attr[train_mask].std(dim=0, keepdim=True) + 1e-6
-
-    normalized_edge_attr = (edge_attr - train_mean) / train_std
-    data["customer", "orders_from", "category"].edge_attr = normalized_edge_attr
-    # Also normalize the reverse edge type's attr with the SAME stats,
-    # since it's the same underlying data just flipped
-    data["category", "rev_orders_from", "customer"].edge_attr = (
-        data["category", "rev_orders_from", "customer"].edge_attr - train_mean
-    ) / train_std
 
     edge_feat_dim = data["customer", "orders_from", "category"].edge_attr.shape[1]
     model = GCNModel(hidden_dim=32, edge_feat_dim=edge_feat_dim)
@@ -185,3 +164,6 @@ if __name__ == "__main__":
     print(f"Accuracy: {test_metrics['accuracy']:.4f}")
     print(f"F1 Score: {test_metrics['f1']:.4f}")
     print(f"ROC AUC:  {test_metrics['roc_auc']:.4f}")
+
+    torch.save(model.state_dict(), "data/processed/gcn_weights.pt")
+    print("Model weights saved to data/processed/gcn_weights.pt")
