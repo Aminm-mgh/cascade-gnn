@@ -13,7 +13,8 @@ import torch
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from src.models.gcn import GCNModel, normalize_graph, get_node_embeddings
+from src.models.gcn import GCNModel
+from src.models.utils import normalize_graph, get_node_embeddings
 
 app = FastAPI(title="cascade-gnn API")
 
