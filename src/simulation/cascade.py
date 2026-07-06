@@ -10,7 +10,8 @@ than a separate simulation-specific classifier.
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
-
+from src.models.gcn import GCNModel
+from src.models.utils import normalize_graph, get_node_embeddings
 import torch
 import torch.nn.functional as F
 from src.models.gcn import GCNModel, normalize_graph
@@ -43,11 +44,11 @@ def load_trained_model(data):
     return model
 
 
-def get_node_embeddings(model, data):
+'''def get_node_embeddings(model, data):
     """Run the encoder once, return embeddings for all nodes."""
     with torch.no_grad():
         x_dict = model.encoder(data.x_dict, data.edge_index_dict)
-    return x_dict
+    return x_dict'''
 
 
 def simulate_cascade(model, data, start_node_type, start_node_id, threshold=0.5, max_hops=5):

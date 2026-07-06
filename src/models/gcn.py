@@ -5,12 +5,14 @@ Since plain GCNConv doesn't support bipartite/heterogeneous graphs well,
 this uses GraphConv (simple neighbor aggregation, no attention) wrapped
 in HeteroConv as the closest honest analog to "GCN" for our graph type.
 """
-
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import HeteroConv, GraphConv, Linear
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-
+from src.models.utils import normalize_graph, get_node_embeddings
 
 class GCNEncoder(torch.nn.Module):
     """
@@ -116,7 +118,7 @@ def evaluate(model, data, mask_name="val_mask"):
     }
 
 
-def normalize_graph(data):
+''' def normalize_graph(data):
     for node_type in data.node_types:
         x = data[node_type].x
         mean = x.mean(dim=0, keepdim=True)
@@ -133,7 +135,7 @@ def normalize_graph(data):
         data["category", "rev_orders_from", "customer"].edge_attr - train_mean
     ) / train_std
 
-    return data
+    return data '''
 
 if __name__ == "__main__":
     torch.manual_seed(42)
