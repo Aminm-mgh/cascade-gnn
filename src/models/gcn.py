@@ -116,11 +116,30 @@ def evaluate(model, data, mask_name="val_mask"):
     }
 
 
+def normalize_graph(data):
+    for node_type in data.node_types:
+        x = data[node_type].x
+        mean = x.mean(dim=0, keepdim=True)
+        std = x.std(dim=0, keepdim=True) + 1e-6
+        data[node_type].x = (x - mean) / std
+
+    train_mask = data["customer", "orders_from", "category"].train_mask
+    edge_attr = data["customer", "orders_from", "category"].edge_attr
+    train_mean = edge_attr[train_mask].mean(dim=0, keepdim=True)
+    train_std = edge_attr[train_mask].std(dim=0, keepdim=True) + 1e-6
+
+    data["customer", "orders_from", "category"].edge_attr = (edge_attr - train_mean) / train_std
+    data["category", "rev_orders_from", "customer"].edge_attr = (
+        data["category", "rev_orders_from", "customer"].edge_attr - train_mean
+    ) / train_std
+
+    return data
+
 if __name__ == "__main__":
     torch.manual_seed(42)
 
     data = torch.load("data/processed/graph.pt", weights_only=False)
-
+    data = normalize_graph(data)
     # --- Normalize features (critical for stable GNN training) ---
     # Node features: z-score normalize each column
     for node_type in data.node_types:
