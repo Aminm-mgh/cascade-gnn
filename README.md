@@ -1,5 +1,6 @@
 # cascade-gnn
 
+**Predicting supply chain disruption risk with Graph Neural Networks — and demonstrating that graph structure genuinely beats traditional ML.**
 
 A live risk-scoring API, an interactive dashboard, and three trained GNN architectures (GCN, GraphSAGE, GAT) benchmarked against classical baselines on real supply chain data — built to show that modelling supply chains as *networks*, not spreadsheets, materially improves disruption prediction.
 
@@ -136,3 +137,4 @@ streamlit run src/dashboard/app.py
 ## License
 
 MIT
+##
