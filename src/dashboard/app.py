@@ -72,7 +72,7 @@ if st.button("Predict Risk"):
         st.warning("Medium risk")
     else:
         st.success("Low risk")
-
+#
 # --- Section 2: Subgraph Visualization ---
 st.header("Sample Network Visualization")
 st.caption("Showing top 10 customers by order count, connected to their ordered categories, colored by predicted risk")
