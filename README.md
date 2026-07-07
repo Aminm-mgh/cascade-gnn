@@ -18,7 +18,7 @@ Given a customer and a product category, `cascade-gnn` predicts the probability 
 ## Quick demo
 
 ```bash
-curl -X POST http://127.0.0.1:8000/risk-score \
+curl -X POST  \
   -H "Content-Type: application/json" \
   -d '{"customer_id": 100, "category_id": 5}'
 
