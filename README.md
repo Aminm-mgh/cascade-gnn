@@ -116,7 +116,7 @@ python3 src/models/gcn.py        # trains GCN, saves weights, prints results
 
 ```bash
 python3 -m uvicorn src.api.main:app --reload
-# Visit http://127.0.0.1:8000/docs for interactive API testing
+# Visit  for interactive API testing
 ```
 
 **5. Run the dashboard:**
