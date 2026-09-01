@@ -17,3 +17,4 @@ python-dotenv
 requests
 jupyter
 xgboost>=2.0
+httpx2
