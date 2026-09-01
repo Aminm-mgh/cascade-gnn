@@ -1,5 +1,7 @@
 # cascade-gnn
 
+[![CI](https://github.com/Aminm-mgh/cascade-gnn/actions/workflows/ci.yml/badge.svg)](https://github.com/Aminm-mgh/cascade-gnn/actions/workflows/ci.yml)
+
 **Predicting supply chain disruption risk with Graph Neural Networks — and demonstrating that graph structure genuinely beats traditional ML.**
 
 A live risk-scoring API, an interactive dashboard, and three trained GNN architectures (GCN, GraphSAGE, GAT) benchmarked against classical baselines on real supply chain data — built to show that modelling supply chains as *networks*, not spreadsheets, materially improves disruption prediction.
@@ -14,11 +16,12 @@ Given a customer and a product category, `cascade-gnn` predicts the probability 
 - **Interactive dashboard** — look up any customer/category risk, and visualize a real risk network
 - **Three trained GNN architectures** — GCN, GraphSAGE, GAT, fully benchmarked
 - **Proven lift over traditional ML** — graph-based models beat logistic regression and XGBoost by a wide margin (see results below)
+- **Tested and automated** — 16 automated tests, CI running on every push, Dockerized API
 
 ## Quick demo
 
 ```bash
-curl -X POST  \
+curl -X POST http://127.0.0.1:8000/risk-score \
   -H "Content-Type: application/json" \
   -d '{"customer_id": 100, "category_id": 5}'
 
@@ -90,6 +93,9 @@ cascade-gnn/
 │   ├── explain/          # Attention weight analysis
 │   ├── api/              # FastAPI risk-scoring service
 │   └── dashboard/        # Streamlit interactive dashboard
+├── tests/                # 16 automated tests (graph, models, API)
+├── .github/workflows/    # CI — runs the test suite on every push
+├── Dockerfile            # Containerized API
 ├── environment.yml       # Conda environment (recommended)
 └── requirements.txt      # Pip fallback
 ```
@@ -116,7 +122,7 @@ python3 src/models/gcn.py        # trains GCN, saves weights, prints results
 
 ```bash
 python3 -m uvicorn src.api.main:app --reload
-# Visit  for interactive API testing
+# Visit http://127.0.0.1:8000/docs for interactive API testing
 ```
 
 **5. Run the dashboard:**
@@ -124,6 +130,33 @@ python3 -m uvicorn src.api.main:app --reload
 ```bash
 streamlit run src/dashboard/app.py
 ```
+
+**6. Run the tests:**
+
+```bash
+python3 -m pytest tests/ -v
+```
+
+16 tests across graph construction, model forward passes, and the API. Tests that need `data/processed/graph.pt` or trained weights skip gracefully if those files aren't present (e.g. in CI, where the raw dataset isn't available).
+
+**7. Run with Docker:**
+
+```bash
+docker build -t cascade-gnn-api .
+docker run -p 8000:8000 -v $(pwd)/data:/app/data cascade-gnn-api
+```
+
+The trained model/graph files are mounted in at runtime (`-v $(pwd)/data:/app/data`) rather than baked into the image, since they're regenerable, gitignored artifacts derived from the raw dataset.
+
+---
+
+## Testing & CI
+
+- **16 automated tests** (`pytest`) covering:
+  - Graph construction: node/edge counts, no-NaN checks, correct 80/10/10 time-based split, reverse-edge existence, binary label validity
+  - Models: GCN, GraphSAGE, and GAT each run a forward pass without errors and produce correctly-shaped, NaN-free output
+  - API: valid requests return well-formed responses, scores genuinely vary across inputs (not a constant), invalid/out-of-range/missing input is correctly rejected
+- **GitHub Actions CI** runs the full suite on every push to `main`, on `macos-latest` (matching the real Apple Silicon development environment, given how many OS-specific issues came up building this — see the interview notes below)
 
 ---
 
@@ -137,4 +170,3 @@ streamlit run src/dashboard/app.py
 ## License
 
 MIT
-##
